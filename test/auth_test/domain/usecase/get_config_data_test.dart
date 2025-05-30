@@ -1,13 +1,15 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:tdd_example/core/failure/failure_model.dart';
+import 'package:tdd_example/feature/auth/domain/entity/config_entity.dart';
 import 'package:tdd_example/feature/auth/domain/repository/config_repository.dart';
 import 'package:tdd_example/feature/auth/domain/usecase/config_usecase.dart';
 
-import '../../data/dummy_data.dart';
+import 'get_config_data_test.mocks.dart';
 
-class MockConfigRepository extends Mock implements ConfigRepository {}
-
+@GenerateMocks([ConfigRepository])
 void main() {
   late MockConfigRepository mockConfigRepository;
   late ConfigUsecase configUsecase;
@@ -17,21 +19,107 @@ void main() {
     configUsecase = ConfigUsecase(mockConfigRepository);
   });
 
-  final tConfigEntity = dummyEntity;
+  final tConfigEntity = ConfigEntity(
+    meta: Meta(
+      copyright: '© 2024 Your Company',
+      site: 'https://example.com',
+      emails: ['support@example.com', 'info@example.com'],
+      version: 1,
+      socialTags: ['ecommerce', 'shopping', 'retail'],
+    ),
+    data: ConfigDataEntity(
+      id: 1,
+      minimumPrice: 100,
+      currency: 'USD',
+      checkStock: true,
+      aboutUs: 'We are a leading e-commerce platform...',
+      privacyPolicy: 'Your privacy is important to us...',
+      termsAndCondition: 'By using our service, you agree to...',
+      orderColor: [
+        OrderColor(id: 1, status: 'pending', color: '#FFA500'),
+        OrderColor(id: 2, status: 'processing', color: '#0000FF'),
+        OrderColor(id: 3, status: 'completed', color: '#008000'),
+      ],
+      warehouses: [
+        Warehouse(
+          id: 1,
+          name: 'Main Warehouse',
+          contactNo: '+1234567890',
+          image: 'https://example.com/warehouse1.jpg',
+        ),
+        Warehouse(
+          id: 2,
+          name: 'East Coast Warehouse',
+          contactNo: '+1987654321',
+          image: 'https://example.com/warehouse2.jpg',
+        ),
+      ],
+      closingMessage:
+          'We are currently closed. Please try again during business hours.',
+      userGroup: [
+        UserGroup(
+          id: 1,
+          title: 'Bronze',
+          point: 0,
+          image: 'https://example.com/bronze.png',
+          webpImage: 'https://example.com/bronze.webp',
+          color: '#CD7F32',
+        ),
+        UserGroup(
+          id: 2,
+          title: 'Silver',
+          point: 1000,
+          image: 'https://example.com/silver.png',
+          webpImage: 'https://example.com/silver.webp',
+          color: '#C0C0C0',
+        ),
+        UserGroup(
+          id: 3,
+          title: 'Gold',
+          point: 5000,
+          image: 'https://example.com/gold.png',
+          webpImage: 'https://example.com/gold.webp',
+          color: '#FFD700',
+        ),
+      ],
+    ),
+  );
   test('should get config data from the repository', () async {
-    // "On the fly" implementation of the Repository using the Mockito package.
-    // When getConcreteNumberTrivia is called with any argument, always answer with
-    // the Right "side" of Either containing a test NumberTrivia object.
+    // arrange
     when(
       mockConfigRepository.getConfig(),
     ).thenAnswer((_) async => Right(tConfigEntity));
-    // The "act" phase of the test.
+
+    // act
     final result = await configUsecase.getConfig();
-    // UseCase should simply return whatever was returned from the Repository
+
+    // assert
     expect(result, Right(tConfigEntity));
-    // Verify that the method has been called on the Repository
     verify(mockConfigRepository.getConfig());
-    // Only the above method should be called and nothing more.
     verifyNoMoreInteractions(mockConfigRepository);
   });
+  test(
+    'should return failure when the repository is not returning a config entity',
+    () async {
+      // arrange
+      when(mockConfigRepository.getConfig()).thenAnswer(
+        (_) async => Left(Failure(message: 'Failed to load config data')),
+      );
+
+      // act
+      final result = await configUsecase.getConfig();
+
+      // assert
+      expect(
+        result,
+        equals(
+          Left<Failure, ConfigEntity>(
+            Failure(message: 'Failed to load config data'),
+          ),
+        ),
+      );
+      verify(mockConfigRepository.getConfig());
+      verifyNoMoreInteractions(mockConfigRepository);
+    },
+  );
 }

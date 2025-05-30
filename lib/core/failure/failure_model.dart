@@ -25,4 +25,17 @@ class Failure {
   /// So this method comes handy to pick a best fitting error message
   String getErrorMsg() =>
       fieldErrors?.errors?[0].message ?? message ?? 'Something went wrong';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Failure &&
+        other.message == message &&
+        other.statusCode == statusCode &&
+        other.title == title &&
+        other.fieldErrors == fieldErrors;
+  }
+
+  @override
+  int get hashCode => message.hashCode;
 }
